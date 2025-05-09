@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BuildMate - Building Materials</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    header, .home, .shop {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    header {
+      background-color: #35424a;
+      color: white;
+    }
+
+    .home {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 80vh;
+      text-align: center;
+    }
+
+    .home h1 {
+      font-size: 2.5rem;
+    }
+
+    .home button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background-color: #5cb85c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .home button:hover {
+      background-color: #4cae4c;
+    }
+
+    .shop {
+      display: none;
+      max-width: 1100px;
+      margin: auto;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .product {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .product h3 {
+      margin: 0 0 0.5rem;
+    }
+
+    .product button {
+      background-color: #5cb85c;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: auto;
+    }
+
+    .product button:hover {
+      background-color: #4cae4c;
+    }
+
+    #cart {
+      display: none;
+      text-align: right;
+      margin: 1rem;
+      font-weight: bold;
+    }
+
+    #checkoutBtn {
+      padding: 8px 15px;
+      background-color: #0275d8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    #checkoutBtn:hover {
+      background-color: #025aa5;
+    }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      z-index: 999;
+    }
+
+    .cart-item {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cart-item button {
+      background-color: #d9534f;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .cart-item button:hover {
+      background-color: #c9302c;
+    }
+
+    .modal button.closeBtn {
+      margin-top: 20px;
+      background-color: #6c757d;
+      padding: 10px;
+    }
+
+    .modal button.closeBtn:hover {
+      background-color: #5a6268;
+    }
+
+    /* Checkout Form */
+    #checkoutForm input, #checkoutForm textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    #checkoutForm button {
+      background-color: #5cb85c;
+      margin-top: 15px;
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 600px) {
+      .home h1 {
+        font-size: 1.8rem;
+      }
+
+      .home p {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .home button {
+        font-size: 1rem;
+        padding: 0.8rem 1.5rem;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .product {
+        padding: 1rem;
+      }
+
+      #checkoutForm input, #checkoutForm textarea {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="modal" id="productModal" style="display:none;">
+    <h2>Select Product Details</h2>
+    <div>
+      <label for="productQuantity">Quantity:</label>
+      <input type="number" id="productQuantity" value="1" min="1" />
+    </div>
+    <div>
+      <label for="productSize">Size:</label>
+      <select id="productSize">
+        <option value="Small">Small</option>
+        <option value="Medium">Medium</option>
+        <option value="Large">Large</option>
+      </select>
+    </div>
+    <button onclick="confirmAddToCart()">Add to Cart</button>
+    <button class="closeBtn" onclick="closeProductModal()">Close</button>
+  </div>
+
+  <!-- Home Screen -->
+  <div class="home" id="homeScreen">
+    <h1>Welcome to BuildMate</h1>
+    <p>Your one-stop shop for building materials</p>
+    <button onclick="enterShop()">Shop Now</button>
+  </div>
+
+  <!-- Header -->
+  <header id="shopHeader" style="display:none;">
+    <h1>BuildMate Store</h1>
+    <p>High-quality construction materials</p>
+  </header>
+
+  <!-- Cart Display -->
+  <div id="cart">
+    <button id="checkoutBtn" onclick="openCart()">Checkout</button>
+    <span id="cartCount">Cart: 0 item(s) - $0.00</span>
+  </div>
+
+  <!-- Product Section -->
+  <div class="shop" id="shopSection">
+    <div class="product">
+      <img src="C:\Users\Christian Paean Ylai\Desktop\Module 7 Images\Wooden Plank.jpg" alt="Wooden Plank" style="width:100%; height:auto; border-radius:5px; margin-bottom:10px;" />
+      <h3>Wooden Plank</h3>
+      <p>Treated wood planks for framing and furniture.</p>
+      <p><strong>Price:</strong> $12.99</p>
+      <button onclick="openProductModal('Wooden Plank', 12.99, 'Wooden Plank Options')">Add to Cart</button>
+    </div>
+
+    <div id="productModal" style="display: none;">
+      <p>Enter quantity, length (ft), and width (ft) for Wooden Planks:</p>
+      <label>Quantity:</label>
+      <input type="number" id="productQuantity" min="1" value="1"><br>
+      <label>Length (ft):</label>
+      <input type="number" id="productLength" min="1" value="1"><br>
+      <label>Width (ft):</label>
+      <input type="number" id="productWidth" min="1" value="1"><br><br>
+      <button onclick="confirmAddToCart()">Confirm</button>
+      <button onclick="closeProductModal()">Cancel</button>
+    </div>
+
+    <div class="product">
+      <img src="C:\Users\Christian Paean Ylai\Desktop\Module 7 Images\Steel Bar.jpg" alt="Product Name" style="width:100%; height:auto; border-radius:5px; margin-bottom:10px;" />
+      <h3>Steel Bar</h3>
+      <p>Durable steel bars for reinforced concrete.</p>
+      <p><strong>Price:</strong> $9.50</p>
+      <button onclick="addToCart('Steel Bar', 9.50)">Add to Cart</button>
+    </div>
+
+    <div class="product">
+      <img src="C:\Users\Christian Paean Ylai\Desktop\Module 7 Images\Cement.jpg" alt="Product Name" style="width:100%; height:auto; border-radius:5px; margin-bottom:10px;" />
+      <h3>Cement (50kg)</h3>
+      <p>Premium cement for reliable construction.</p>
+      <p><strong>Price:</strong> $6.75</p>
+      <button onclick="addToCart('Cement', 6.75)">Add to Cart</button>
+    </div>
+
+    <div class="product">
+      <img src="C:\Users\Christian Paean Ylai\Desktop\Module 7 Images\Gravel.jpg" alt="Product Name" style="width:100%; height:auto; border-radius:5px; margin-bottom:10px;" />
+      <h3>Gravel (1 m³)</h3>
+      <p>Clean gravel mix for structural integrity.</p>
+      <p><strong>Price:</strong> $20.00</p>
+      <button onclick="addToCart('Gravel', 20.00)">Add to Cart</button>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div class="modal" id="cartModal">
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <p><strong>Total: $<span id="cartTotal">0.00</span></strong></p>
+    <button onclick="proceedToCheckout()">Continue to Checkout</button>
+    <button class="closeBtn" onclick="closeCart()">Close</button>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal" id="checkoutModal">
+    <h2>Checkout</h2>
+    <form id="checkoutForm" onsubmit="return submitOrder()">
+      <input type="text" id="name" placeholder="Full Name" required />
+      <input type="email" id="email" placeholder="Email Address" required />
+      <textarea id="address" placeholder="Shipping Address" required></textarea>
+      <button type="submit">Place Order</button>
+      <button type="button" class="closeBtn" onclick="closeCheckout()">Cancel</button>
+    </form>
+  </div>
+
+  <script>
+
+const cart = [];
+  let selectedProduct = null;
+  let selectedPrice = null;
+  let productOptions = [];
+
+  function openProductModal(name, price, options) {
+    selectedProduct = name;
+    selectedPrice = price;
+    productOptions = options === 'Wooden Plank Options' ? ['Length', 'Width', 'Quantity'] : ['Quantity', 'Size'];
+    document.getElementById('productModal').style.display = 'block';
+
+    // Set modal title
+    document.getElementById('modalTitle').textContent = `Select ${name} Details`;
+
+    // Dynamically generate product-specific options in modal
+    let modalContent = '';
+    productOptions.forEach(option => {
+      modalContent += generateProductOption(option);
+    });
+
+    document.getElementById('modalContent').innerHTML = modalContent;
+  }
+
+  function generateProductOption(option) {
+    if (option === 'Length') {
+      return `
+        <div>
+          <label for="productLength">Length:</label>
+          <select id="productLength">
+            <option value="1m">1m</option>
+            <option value="2m">2m</option>
+            <option value="3m">3m</option>
+          </select>
+        </div>
+      `;
+    } else if (option === 'Width') {
+      return `
+        <div>
+          <label for="productWidth">Width:</label>
+          <select id="productWidth">
+            <option value="10cm">10cm</option>
+            <option value="20cm">20cm</option>
+            <option value="30cm">30cm</option>
+          </select>
+        </div>
+      `;
+    } else if (option === 'Size') {
+      return `
+        <div>
+          <label for="productSize">Size:</label>
+          <select id="productSize">
+            <option value="Small">Small</option>
+            <option value="Medium">Medium</option>
+            <option value="Large">Large</option>
+          </select>
+        </div>
+      `;
+    } else if (option === 'Quantity') {
+      return `
+        <div>
+          <label for="productQuantity">Quantity:</label>
+          <input type="number" id="productQuantity" value="1" min="1" />
+        </div>
+      `;
+    }
+    return '';
+  }
+
+  function confirmAddToCart() {
+    const quantity = document.getElementById('productQuantity').value;
+    const length = document.getElementById('productLength') ? document.getElementById('productLength').value : null;
+    const width = document.getElementById('productWidth') ? document.getElementById('productWidth').value : null;
+    const size = document.getElementById('productSize') ? document.getElementById('productSize').value : null;
+
+    const totalPrice = selectedPrice * quantity;
+
+    // Add product with its options to cart
+    if (selectedProduct === 'Wooden Plank') {
+      cart.push({ name: `${selectedProduct} - Length: ${length}, Width: ${width}`, price: totalPrice, quantity, length, width });
+    } else if (selectedProduct === 'Steel Bar') {
+      cart.push({ name: `${selectedProduct} - Size: ${size}`, price: totalPrice, quantity, size });
+    }
+    updateCartDisplay();
+    closeProductModal();
+  }
+
+  function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+  }
+
+  function updateCartDisplay() {
+    const count = cart.length;
+    const total = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+    document.getElementById('cartCount').textContent = `Cart: ${count} item(s) - $${total}`;
+  }
+
+    function enterShop() {
+      document.getElementById('homeScreen').style.display = 'none';
+      document.getElementById('shopHeader').style.display = 'block';
+      document.getElementById('shopSection').style.display = 'grid';
+      document.getElementById('cart').style.display = 'block';
+    }
+
+    function openProductModal(name, price) {
+    selectedProduct = name;
+    selectedPrice = price;
+    document.getElementById('productModal').style.display = 'block';
+    }
+
+    function confirmAddToCart() {
+    const quantity = document.getElementById('productQuantity').value;
+    const size = document.getElementById('productSize').value;
+
+    const totalPrice = selectedPrice * quantity;
+
+    cart.push({ name: `${selectedProduct} - ${size}`, price: totalPrice, quantity, size });
+    updateCartDisplay();
+
+    closeProductModal();
+    }
+
+    function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+    }
+
+    function addToCart(name, price) {
+    openProductModal(name, price);
+    }
+
+    function addToCart(name, price) {
+      cart.push({ name, price });
+      updateCartDisplay();
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartDisplay();
+      openCart();
+    }
+
+    function updateCartDisplay() {
+      const count = cart.length;
+      const total = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+      document.getElementById('cartCount').textContent = `Cart: ${count} item(s) - $${total}`;
+    }
+
+    function openCart() {
+      const cartItemsDiv = document.getElementById('cartItems');
+      cartItemsDiv.innerHTML = '';
+      cart.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          ${item.name} - $${item.price.toFixed(2)}
+          <button onclick="removeFromCart(${index})">Remove</button>
+        `;
+        cartItemsDiv.appendChild(div);
+      });
+      document.getElementById('cartTotal').textContent = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+      document.getElementById('cartModal').style.display = 'block';
+    }
+
+    function closeCart() {
+      document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function proceedToCheckout() {
+      closeCart();
+      document.getElementById('checkoutModal').style.display = 'block';
+    }
+
+    function closeCheckout() {
+      document.getElementById('checkoutModal').style.display = 'none';
+    }
+
+    function submitOrder() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const address = document.getElementById('address').value.trim();
+
+      if (name && email && address) {
+        alert(`Thank you, ${name}! Your order has been placed.`);
+        cart.length = 0;
+        updateCartDisplay();
+        closeCheckout();
+        return false;
+      }
+
+      alert("Please fill out all fields.");
+      return false;
+    }
+
+  function enterShop() {
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('shopHeader').style.display = 'block';
+    document.getElementById('shopSection').style.display = 'grid';
+    document.getElementById('cart').style.display = 'block';
+  }
+
+  // Function to open the product modal
+  function openProductModal(name, price) {
+    selectedProduct = name;
+    selectedPrice = price;
+    document.getElementById('productModal').style.display = 'block';
+  }
+
+  // Confirm and add product to cart with quantity and size
+  function confirmAddToCart() {
+    const quantity = document.getElementById('productQuantity').value;
+    const size = document.getElementById('productSize').value;
+
+    const totalPrice = selectedPrice * quantity;
+
+    // Add to cart with size and quantity information
+    cart.push({ name: `${selectedProduct} - ${size}`, price: totalPrice, quantity, size });
+    updateCartDisplay();
+
+    closeProductModal();
+  }
+
+  // Close the product modal
+  function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+  }
+
+  // Function to add product to cart (triggers the modal)
+  function addToCart(name, price) {
+    openProductModal(name, price);
+  }
+
+  function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartDisplay();
+    openCart();
+  }
+
+  // Update the cart display
+  function updateCartDisplay() {
+    const count = cart.length;
+    const total = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+    document.getElementById('cartCount').textContent = `Cart: ${count} item(s) - $${total}`;
+  }
+
+  function openCart() {
+    const cartItemsDiv = document.getElementById('cartItems');
+    cartItemsDiv.innerHTML = '';
+    cart.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
+        ${item.name} - $${item.price.toFixed(2)}
+        <button onclick="removeFromCart(${index})">Remove</button>
+      `;
+      cartItemsDiv.appendChild(div);
+    });
+    document.getElementById('cartTotal').textContent = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+    document.getElementById('cartModal').style.display = 'block';
+  }
+
+  function closeCart() {
+    document.getElementById('cartModal').style.display = 'none';
+  }
+
+  function proceedToCheckout() {
+    closeCart();
+    document.getElementById('checkoutModal').style.display = 'block';
+  }
+
+  function closeCheckout() {
+    document.getElementById('checkoutModal').style.display = 'none';
+  }
+
+  function submitOrder() {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const address = document.getElementById('address').value.trim();
+
+    if (name && email && address) {
+      alert(`Thank you, ${name}! Your order has been placed.`);
+      cart.length = 0;
+      updateCartDisplay();
+      closeCheckout();
+      return false;
+    }
+
+    alert("Please fill out all fields.");
+    return false;
+  }
+
+  
+  
+  </script>
+
+</body>
+</html>
